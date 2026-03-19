@@ -1,0 +1,13 @@
+.git
+.vscode
+.idea
+build/bin
+coverage
+coverage.out
+frontend/node_modules
+frontend/dist
+*.log
+*.tmp
+*.prof
+cpa-control-center
+cpa-control-center.exe

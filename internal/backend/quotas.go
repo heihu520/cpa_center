@@ -705,6 +705,22 @@ func formatQuotaBucketPercent(value float64) string {
 	return fmt.Sprintf("%.1f", rounded)
 }
 
+func usagePayloadHasQuotaExhausted(payload map[string]any) bool {
+	result, err := parseQuotaBucketResult(payload)
+	if err != nil {
+		return false
+	}
+	result = normalizeQuotaBucketResult(result)
+	return quotaBucketIsExhausted(result.fiveHour) || quotaBucketIsExhausted(result.weekly) || quotaBucketIsExhausted(result.codeReviewWeekly)
+}
+
+func quotaBucketIsExhausted(value *quotaBucketValue) bool {
+	if value == nil {
+		return false
+	}
+	return roundToOneDecimal(value.remainingPercent) <= 0
+}
+
 func parseQuotaBucketResult(payload map[string]any) (quotaBucketResult, error) {
 	planType := normalizeQuotaPlanType(stringValue(payload["plan_type"]))
 	candidates := collectQuotaCandidates("", payload)

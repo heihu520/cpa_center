@@ -177,6 +177,57 @@ func TestClientDeleteDoesNotFallbackToOriginalPathOnNotFound(t *testing.T) {
 	}
 }
 
+func TestClientTreatsZeroQuotaBucketsAsQuotaLimited(t *testing.T) {
+	t.Parallel()
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch {
+		case r.Method == http.MethodPost && r.URL.Path == "/v0/management/api-call":
+			_ = json.NewEncoder(w).Encode(map[string]any{
+				"status_code": 200,
+				"body": `{
+					"plan_type":"pro",
+					"rate_limit":{
+						"allowed":true,
+						"limit_reached":false,
+						"primary_window":{"used_percent":100,"window_hours":5},
+						"secondary_window":{"used_percent":100,"window_days":7}
+					}
+				}`,
+			})
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	defer server.Close()
+
+	client := NewClient()
+	settings := AppSettings{
+		BaseURL:         server.URL,
+		ManagementToken: "token",
+		Locale:          localeEnglish,
+		TimeoutSeconds:  5,
+		UserAgent:       defaultUserAgent,
+	}
+
+	record := AccountRecord{
+		Name:             "quota-zero.json",
+		AuthIndex:        "quota-zero",
+		Provider:         "codex",
+		Type:             "codex",
+		PlanType:         "pro",
+		ChatGPTAccountID: "acct-zero",
+	}
+
+	probed := client.ProbeUsage(context.Background(), settings, record)
+	if probed.StateKey != stateQuotaLimited {
+		t.Fatalf("expected zero bucket quota to be quota-limited, got %s", probed.StateKey)
+	}
+	if !probed.QuotaLimited {
+		t.Fatal("expected quota-limited flag to be true")
+	}
+}
+
 func TestClientRetriesTransientHTTPFailure(t *testing.T) {
 	t.Parallel()
 

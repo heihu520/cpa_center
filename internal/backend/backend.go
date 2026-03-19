@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"sync"
 )
 
@@ -71,6 +72,9 @@ func New(dataDir string, emitter EventEmitter) (*Backend, error) {
 }
 
 func DefaultDataDir() (string, error) {
+	if value := strings.TrimSpace(os.Getenv("CPA_DATA_DIR")); value != "" {
+		return value, nil
+	}
 	configDir, err := os.UserConfigDir()
 	if err != nil {
 		return "", err

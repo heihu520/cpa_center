@@ -12,6 +12,12 @@
 
 - 本项目明确借鉴并参考了 [`fantasticjoe/cpa-warden`](https://github.com/fantasticjoe/cpa-warden) 的工作流设计。
 - 这个桌面工具当前主要面向 [`router-for-me/CLIProxyAPI`](https://github.com/router-for-me/CLIProxyAPI) 作为 CPA 后端使用。
+- 当前仓库是基于 [`Biliniko/cpa-control-center`](https://github.com/Biliniko/cpa-control-center) 拉取后进行二次开发的 Web / Docker / 多连接版本。
+
+## 文档入口
+
+- 架构说明：[ARCHITECTURE.zh-CN.md](./ARCHITECTURE.zh-CN.md)
+- 部署教程：[DEPLOYMENT.zh-CN.md](./DEPLOYMENT.zh-CN.md)
 
 ## 概览
 

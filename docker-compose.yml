@@ -1,0 +1,14 @@
+services:
+  cpa-center:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cpa-center
+    ports:
+      - "12350:8080"
+    environment:
+      CPA_WEB_ADDR: 0.0.0.0:8080
+      CPA_DATA_DIR: /data
+    volumes:
+      - ./docker-data:/data
+    restart: unless-stopped

@@ -280,6 +280,9 @@ func (c *Client) probeUsageOnce(ctx context.Context, settings AppSettings, recor
 		result.UsageError = errors.New(result.Record.ProbeErrorText)
 	} else {
 		result.Usage = parsedBody
+		if quotaLimited := usagePayloadHasQuotaExhausted(parsedBody); quotaLimited {
+			result.Record.LimitReached = boolPtr(true)
+		}
 	}
 
 	result.Record = classifyAccountState(result.Record)
@@ -642,9 +645,9 @@ func stringValue(value any) string {
 	switch typed := value.(type) {
 	case string:
 		return typed
-	case fmt.Stringer:
-		return typed.String()
 	case json.Number:
+		return typed.String()
+	case fmt.Stringer:
 		return typed.String()
 	case float64:
 		return fmt.Sprintf("%.0f", typed)

@@ -95,6 +95,9 @@ func webListenAddr() string {
 	if value := strings.TrimSpace(os.Getenv("CPA_WEB_ADDR")); value != "" {
 		return value
 	}
+	if port := strings.TrimSpace(os.Getenv("PORT")); port != "" {
+		return "0.0.0.0:" + port
+	}
 	return "0.0.0.0:8080"
 }
 
@@ -125,7 +128,7 @@ func (s *appServer) routes() http.Handler {
 	mux.HandleFunc("/api/scan/details", s.handleScanDetails)
 	mux.HandleFunc("/api/events", s.handleEvents)
 	mux.Handle("/", s.frontendHandler())
-	return withCORS(mux)
+	return mux
 }
 
 func (s *appServer) frontendHandler() http.Handler {

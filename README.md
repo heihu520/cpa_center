@@ -12,6 +12,12 @@ You connect it to a CPA instance with a `Base URL` and a `Management Token`, the
 
 - This project is explicitly inspired by and borrows workflow ideas from [`fantasticjoe/cpa-warden`](https://github.com/fantasticjoe/cpa-warden).
 - This desktop tool is intended to be used with [`router-for-me/CLIProxyAPI`](https://github.com/router-for-me/CLIProxyAPI) as the CPA backend exposing the management endpoints consumed by the app.
+- This repository is a secondary development branch derived from [`Biliniko/cpa-control-center`](https://github.com/Biliniko/cpa-control-center), with Web, Docker, and multi-connection adaptations.
+
+## Documentation Entry Points
+
+- Architecture notes: [ARCHITECTURE.zh-CN.md](./ARCHITECTURE.zh-CN.md)
+- Deployment guide: [DEPLOYMENT.zh-CN.md](./DEPLOYMENT.zh-CN.md)
 
 ## Overview
 
@@ -346,6 +352,31 @@ cpa-control-center/
 ```bash
 wails dev
 ```
+
+### Docker Run
+
+Build and run the web version with Docker Compose:
+
+```bash
+docker compose up -d --build
+```
+
+Then open:
+
+```text
+http://localhost:12350
+```
+
+Persistent app data is stored in:
+
+```text
+./docker-data
+```
+
+Important runtime environment variables:
+
+- `CPA_WEB_ADDR`: listen address inside the container, defaults to `0.0.0.0:8080`
+- `CPA_DATA_DIR`: persistent data directory, defaults to `/data`
 
 ### Windows Build
 
