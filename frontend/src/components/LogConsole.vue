@@ -64,6 +64,7 @@ defineProps<{
 
 .log-console--compact {
   padding: 0.85rem;
+  max-height: 360px;
 }
 
 .log-console--compact .log-row {

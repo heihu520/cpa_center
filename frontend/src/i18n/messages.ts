@@ -2,8 +2,8 @@ export const messages = {
   'en-US': {
     app: {
       name: 'CPA Control Center',
-      headline: 'Desktop codex pool control.',
-      copy: 'Connect once with the CPA URL and management token, then manage the auth pool from a native window.',
+      headline: 'Web Codex pool control center.',
+      copy: 'Connect to the CPA endpoint once, then manage the auth pool, quotas, and maintenance tasks from the web console.',
     },
     nav: {
       dashboard: 'Dashboard',
@@ -105,8 +105,8 @@ export const messages = {
     },
     dashboard: {
       eyebrow: 'Codex Pool Operations',
-      title: 'Keep the CPA auth pool healthy without touching a browser panel.',
-      lead: 'Scans, quota handling, and recovery actions all flow through the saved CPA management endpoint.',
+      title: 'Keep the CPA auth pool healthy from the web console.',
+      lead: 'Run scans, quota handling, and recovery actions through the saved CPA management endpoint in one browser-based workspace.',
       scanNow: 'Scan Now',
       runMaintain: 'Run Maintain',
       cancelTask: 'Cancel Task',
@@ -474,8 +474,8 @@ export const messages = {
   'zh-CN': {
     app: {
       name: 'CPA Control Center',
-      headline: '桌面版 Codex 号池控制台。',
-      copy: '填写 CPA 地址和管理令牌后，就可以在原生窗口里直接管理 auth 号池。',
+      headline: 'Web 版 Codex 号池控制台。',
+      copy: '填写 CPA 地址和管理令牌后，即可在 Web 控制台中统一管理 auth 号池、额度快照和维护任务。',
     },
     nav: {
       dashboard: '仪表盘',
@@ -577,8 +577,8 @@ export const messages = {
     },
     dashboard: {
       eyebrow: 'Codex 号池运维',
-      title: '不打开浏览器，也能把 CPA auth 号池维持在健康状态。',
-      lead: '扫描、限额处理和恢复启用都会通过已保存的 CPA 管理接口执行。',
+      title: '在 Web 控制台中维持 CPA auth 号池的健康状态。',
+      lead: '扫描、限额处理和恢复启用都会通过已保存的 CPA 管理接口执行，并集中展示在同一个 Web 工作台里。',
       scanNow: '立即扫描',
       runMaintain: '执行维护',
       cancelTask: '取消任务',

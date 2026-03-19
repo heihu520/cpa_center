@@ -421,7 +421,7 @@ func (b *Backend) ExportAccounts(kind string, format string, path string) (Expor
 		return ExportResult{}, errors.New(msg(settings.Locale, "error.unsupported_export_format", format))
 	}
 
-	b.emitLog("maintain", "info", msg(settings.Locale, "task.export.completed", len(selected), exportKindLabel(settings.Locale, kind), path))
+	b.emitLog("maintain", "info", msg(settings.Locale, "task.export.completed", len(selected), exportKindLabel(settings.Locale, kind)))
 	return ExportResult{
 		Kind:     kind,
 		Format:   format,

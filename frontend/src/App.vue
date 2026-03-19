@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import { computed, nextTick, onErrorCaptured, onMounted, onUnmounted, provide, ref, watch } from 'vue'
-import { ElConfigProvider, ElMessage, ElOption, ElSelect } from 'element-plus'
+import { ElButton, ElConfigProvider, ElMessage, ElOption, ElSelect } from 'element-plus'
 import type { Language } from 'element-plus/es/locale'
 import en from 'element-plus/es/locale/lang/en'
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
@@ -40,6 +40,7 @@ const appReady = ref(false)
 const shellRevision = ref(0)
 const viewRevision = ref(0)
 const debugVisible = ref(false)
+const mobileNavOpen = ref(false)
 const debugEntries = ref<DebugEntry[]>([])
 const appViewport = ref<HTMLDivElement | null>(null)
 let debugListenersBound = false
@@ -148,6 +149,17 @@ async function refreshShell() {
 
 function appendDebug(entry: DebugEntry) {
   debugEntries.value = [entry, ...debugEntries.value].slice(0, 120)
+}
+
+function closeMobileNav() {
+  mobileNavOpen.value = false
+}
+
+function activateView(view: ViewKey) {
+  activeView.value = view
+  if (shellMode.value === 'mobile') {
+    closeMobileNav()
+  }
 }
 
 function updateViewportMetrics() {
@@ -512,7 +524,7 @@ watch(debugVisible, (visible) => {
               :key="item.key"
               class="nav-item"
               :class="{ 'nav-item--active': item.key === activeView }"
-              @click="activeView = item.key"
+              @click="activateView(item.key)"
             >
               <strong>{{ item.label }}</strong>
               <span>{{ item.caption }}</span>
@@ -522,12 +534,17 @@ watch(debugVisible, (visible) => {
 
         <main class="app-main">
           <header class="topbar">
-            <div class="topbar-status">
-              <span class="status-dot" :data-tone="settingsStore.connectionTone" />
-              <div>
-                <strong>{{ connectionLabel }}</strong>
-                <p>{{ settingsStore.settings.baseUrl || t('topbar.endpointHint') }}</p>
+            <div class="topbar-main">
+              <div class="topbar-status">
+                <span class="status-dot" :data-tone="settingsStore.connectionTone" />
+                <div>
+                  <strong>{{ connectionLabel }}</strong>
+                  <p>{{ settingsStore.settings.baseUrl || t('topbar.endpointHint') }}</p>
+                </div>
               </div>
+              <el-button v-if="shellMode === 'mobile'" class="topbar-menu" plain @click="mobileNavOpen = !mobileNavOpen">
+                {{ mobileNavOpen ? '关闭' : '菜单' }}
+              </el-button>
             </div>
             <div class="topbar-meta">
               <span>{{ t('topbar.tracked', { count: accountsStore.summary.filteredAccounts }) }}</span>
@@ -557,6 +574,25 @@ watch(debugVisible, (visible) => {
               </el-select>
             </div>
           </header>
+
+          <section v-if="shellMode === 'mobile' && mobileNavOpen" class="mobile-nav-panel panel">
+            <div class="mobile-nav-header">
+              <p class="sidebar-kicker">{{ t('app.name') }}</p>
+              <h3>{{ t('app.headline') }}</h3>
+            </div>
+            <nav class="nav-list nav-list--mobile">
+              <button
+                v-for="item in navItems"
+                :key="`mobile-${item.key}`"
+                class="nav-item"
+                :class="{ 'nav-item--active': item.key === activeView }"
+                @click="activateView(item.key)"
+              >
+                <strong>{{ item.label }}</strong>
+                <span>{{ item.caption }}</span>
+              </button>
+            </nav>
+          </section>
 
           <section v-if="!appReady" class="view-shell view-shell--settings">
             <article class="panel panel--fill">

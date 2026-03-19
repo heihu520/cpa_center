@@ -25,9 +25,10 @@ const { t } = useI18n()
 const accountsStore = useAccountsStore()
 const tasksStore = useTasksStore()
 
-const pageSizeOptions = [20, 50, 100, 200]
+const pageSizeOptions = [5, 20, 50, 100, 200]
 const accountsTable = ref<InstanceType<typeof ElTable> | null>(null)
 const selectedRecords = ref<AccountRecord[]>([])
+const selectedRecordMap = computed(() => new Map(selectedRecords.value.map((item) => [item.name, item])))
 const detailDialogOpen = ref(false)
 const detailDialogRecordName = ref('')
 const detailDialogContent = ref('')
@@ -65,6 +66,7 @@ const disabledFilterValue = computed({
   },
 })
 const selectedNames = computed(() => selectedRecords.value.map((item) => item.name))
+const isMobile = computed(() => window.innerWidth <= 920)
 const selectedCount = computed(() => selectedRecords.value.length)
 const selectedDisabledCount = computed(() => selectedRecords.value.filter((item) => item.disabled).length)
 const selectedEnabledCount = computed(() => selectedRecords.value.filter((item) => !item.disabled).length)
@@ -84,6 +86,17 @@ async function reloadAccounts(options?: { page?: number; pageSize?: number; rese
   await clearSelection()
   await accountsStore.loadAccountsPage(options)
 }
+
+watch(
+  isMobile,
+  (mobile) => {
+    const desiredPageSize = mobile ? 5 : 20
+    if (accountsStore.pageSize !== desiredPageSize) {
+      void reloadAccounts({ pageSize: desiredPageSize, resetPage: true })
+    }
+  },
+  { immediate: true },
+)
 
 watch(
   () => [
@@ -115,6 +128,20 @@ watch(
 
 function onSelectionChange(records: AccountRecord[]) {
   selectedRecords.value = records
+}
+
+function isSelected(name: string) {
+  return selectedRecordMap.value.has(name)
+}
+
+function toggleMobileSelection(record: AccountRecord, checked: boolean) {
+  if (checked) {
+    if (!selectedRecordMap.value.has(record.name)) {
+      selectedRecords.value = [...selectedRecords.value, record]
+    }
+    return
+  }
+  selectedRecords.value = selectedRecords.value.filter((item) => item.name !== record.name)
 }
 
 function detailText(row: AccountRecord) {
@@ -325,7 +352,35 @@ function changePageSize(pageSize: number) {
       </div>
 
       <div class="panel__body panel__body--table">
-        <div class="table-wrap">
+        <div v-if="isMobile" class="mobile-accounts-list">
+          <article v-for="row in accountsStore.records" :key="row.name" class="mobile-account-card">
+            <label class="mobile-account-card__select">
+              <input type="checkbox" :checked="isSelected(row.name)" @change="toggleMobileSelection(row, ($event.target as HTMLInputElement).checked)" />
+              <span>{{ row.name }}</span>
+            </label>
+            <div class="mobile-account-card__meta">
+              <StatusPill :state="row.stateKey || row.state" />
+              <span :class="planPillClass(row.planType)">{{ planPillLabel(row.planType) }}</span>
+              <span :class="['account-pill', row.disabled ? 'account-pill--danger' : 'account-pill--success']">
+                {{ row.disabled ? t('common.yes') : t('common.no') }}
+              </span>
+            </div>
+            <div class="mobile-account-card__details">
+              <span>{{ row.email || t('common.notAvailable') }}</span>
+              <span>{{ row.provider || t('common.notAvailable') }}</span>
+              <span>{{ formatDateTime(row.lastProbedAt) }}</span>
+            </div>
+            <button
+              type="button"
+              class="account-detail-trigger"
+              :aria-label="t('accounts.actions.viewDetails')"
+              @click="openDetailDialog(row)"
+            >
+              <span class="account-detail-trigger__text">{{ detailText(row) }}</span>
+            </button>
+          </article>
+        </div>
+        <div v-else class="table-wrap">
           <el-table
             ref="accountsTable"
             class="accounts-table"
@@ -375,7 +430,7 @@ function changePageSize(pageSize: number) {
           </el-table>
         </div>
 
-        <div class="table-footer">
+        <div class="table-footer" :class="{ 'table-footer--mobile': isMobile }">
           <span class="muted table-footer__summary">
             {{ t('accounts.paginationSummary', { shown: accountsStore.records.length, total: accountsStore.totalRecords, all: accountsStore.summary.filteredAccounts }) }}
           </span>
@@ -385,7 +440,7 @@ function changePageSize(pageSize: number) {
             background
             :page-sizes="pageSizeOptions"
             :total="accountsStore.totalRecords"
-            layout="total, sizes, prev, pager, next, jumper"
+            :layout="isMobile ? 'prev, pager, next, sizes' : 'total, sizes, prev, pager, next, jumper'"
             @current-change="changePage"
             @size-change="changePageSize"
           />

@@ -37,6 +37,7 @@ const scanDetailSummary = computed(() => accountsStore.scanDetail?.summary ?? nu
 const scanDetailRecords = computed(() => accountsStore.scanDetail?.records ?? [])
 const scanDetailTotal = computed(() => accountsStore.scanDetail?.totalRecords ?? 0)
 const shellMode = computed<ShellMode>(() => injectedShellMode?.value ?? 'desktop')
+const isMobile = computed(() => shellMode.value === 'mobile')
 const drawerSize = computed(() => resolveDashboardDrawerSize(shellMode.value))
 
 const scanDetailStatusState = computed(() => {
@@ -241,7 +242,23 @@ function changeDetailPageSize(pageSize: number) {
           <span class="muted">{{ accountsStore.summary.lastScanAt ? formatDateTime(accountsStore.summary.lastScanAt) : t('dashboard.noCompletedScan') }}</span>
         </div>
         <div class="panel__body panel__body--table">
-          <div class="table-wrap">
+          <div v-if="isMobile" class="mobile-history-list">
+            <article v-for="row in historyRows" :key="row.runId" class="mobile-history-card">
+              <div class="mobile-history-card__head">
+                <strong>#{{ row.runId }}</strong>
+                <StatusPill :state="row.status === 'success' ? 'normal' : row.status === 'failed' ? 'error' : 'pending'" :label="row.statusLabel" />
+              </div>
+              <div class="mobile-history-card__grid">
+                <span>{{ t('dashboard.historyColumns.filtered') }}：{{ row.filteredAccounts }}</span>
+                <span>{{ t('dashboard.historyColumns.invalid') }}：{{ row.invalid401Count }}</span>
+                <span>{{ t('dashboard.historyColumns.quota') }}：{{ row.quotaLimitedCount }}</span>
+                <span>{{ t('dashboard.historyColumns.recovered') }}：{{ row.recoveredCount }}</span>
+              </div>
+              <span class="muted mobile-history-card__time">{{ row.finishedAtLabel }}</span>
+              <el-button text @click="openHistory(row.runId)">{{ t('dashboard.inspect') }}</el-button>
+            </article>
+          </div>
+          <div v-else class="table-wrap">
             <el-table class="dashboard-history-table" :data="historyRows" height="100%">
               <el-table-column prop="runId" :label="t('dashboard.historyColumns.run')" width="76" />
               <el-table-column prop="statusLabel" :label="t('dashboard.historyColumns.status')" width="110" />
@@ -308,7 +325,23 @@ function changeDetailPageSize(pageSize: number) {
           </div>
 
           <div class="scan-detail-table-shell" :class="{ 'scan-detail-table-shell--loading': detailLoading }">
-            <div class="scan-detail-table-frame">
+            <div v-if="isMobile" class="mobile-scan-detail-list">
+              <article v-for="row in scanDetailRecords" :key="row.name" class="mobile-scan-detail-card">
+                <div class="mobile-scan-detail-card__head">
+                  <div class="scan-detail-name">
+                    <strong>{{ row.name }}</strong>
+                    <span>{{ row.provider || t('common.unknown') }}</span>
+                  </div>
+                  <StatusPill :state="row.stateKey || row.state" />
+                </div>
+                <div class="mobile-scan-detail-card__grid">
+                  <span>{{ t('dashboard.detailColumns.email') }}：{{ row.email || t('common.notAvailable') }}</span>
+                  <span>{{ t('dashboard.detailColumns.plan') }}：{{ row.planType || t('common.notAvailable') }}</span>
+                  <span>{{ t('dashboard.detailColumns.probeError') }}：{{ row.probeErrorText || t('common.notAvailable') }}</span>
+                </div>
+              </article>
+            </div>
+            <div v-else class="scan-detail-table-frame">
               <el-table class="scan-detail-table" :data="scanDetailRecords" height="100%">
                 <el-table-column :label="t('dashboard.detailColumns.name')" min-width="320" show-overflow-tooltip>
                   <template #default="{ row }">
@@ -343,7 +376,7 @@ function changeDetailPageSize(pageSize: number) {
                 :current-page="detailPage"
                 :page-size="detailPageSize"
                 :total="scanDetailTotal"
-                layout="total, sizes, prev, pager, next"
+                :layout="isMobile ? 'prev, pager, next, sizes' : 'total, sizes, prev, pager, next'"
                 @current-change="changeDetailPage"
                 @size-change="changeDetailPageSize"
               />

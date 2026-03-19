@@ -222,7 +222,7 @@ func logFilePath(dataDir string) string {
 }
 
 func defaultExportPath(exportDir string, kind string, format string) string {
-	fileName := fmt.Sprintf("%s_%s.%s", kind, time.Now().Format("20060102_150405"), format)
+	fileName := fmt.Sprintf("export-%s-%d.%s", kind, time.Now().Unix(), format)
 	return filepath.Join(exportDir, fileName)
 }
 
