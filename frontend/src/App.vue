@@ -110,11 +110,17 @@ const safeDebugEntries = computed(() => (
 ))
 
 const shellMode = computed<ShellMode>(() => {
+  const resolvedMode = resolveShellMode(viewportWidth.value, viewportHeight.value, window.devicePixelRatio || 1)
+  if (resolvedMode === 'mobile') {
+    return 'mobile'
+  }
+
   const preferredMode = settingsStore.settings.layoutMode
   if (preferredMode && preferredMode !== 'auto') {
     return preferredMode as ShellMode
   }
-  return resolveShellMode(viewportWidth.value, viewportHeight.value, window.devicePixelRatio || 1)
+
+  return resolvedMode
 })
 
 const shellClasses = computed(() => ({
@@ -171,74 +177,6 @@ function activateView(view: ViewKey) {
   }
 }
 
-function shouldBypassWheelFallback(target: EventTarget | null) {
-  if (!(target instanceof Element)) {
-    return false
-  }
-
-  const interactiveSelector = [
-    '[contenteditable="true"]',
-    '.el-select-dropdown',
-    '.el-popper',
-    '.el-dialog',
-    '.el-drawer',
-    '.el-table__body-wrapper',
-    '.table-wrap',
-  ].join(', ')
-
-  if (target.closest(interactiveSelector)) {
-    return true
-  }
-
-  const rootScrollableSelectors = [
-    'html',
-    'body',
-    '#app',
-    '.app-viewport',
-    '.app-shell',
-    '.app-main',
-    '.view-shell',
-  ]
-
-  for (let element: Element | null = target; element; element = element.parentElement) {
-    if (rootScrollableSelectors.some((selector) => element.matches(selector))) {
-      continue
-    }
-    const style = window.getComputedStyle(element)
-    const overflowY = style.overflowY
-    if ((overflowY === 'auto' || overflowY === 'scroll') && element.scrollHeight > element.clientHeight + 1) {
-      return true
-    }
-  }
-
-  return false
-}
-
-function onMobileWheel(event: WheelEvent) {
-  if ((event as WheelEvent & { __cpaHandled?: boolean }).__cpaHandled) {
-    return
-  }
-  if (shellMode.value !== 'mobile') {
-    return
-  }
-  if (!event.cancelable) {
-    return
-  }
-  if (Math.abs(event.deltaY) <= Math.abs(event.deltaX) || event.deltaY === 0) {
-    return
-  }
-  if (shouldBypassWheelFallback(event.target)) {
-    return
-  }
-
-  ;(event as WheelEvent & { __cpaHandled?: boolean }).__cpaHandled = true
-  event.preventDefault()
-  window.scrollBy({
-    top: event.deltaY,
-    left: 0,
-    behavior: 'auto',
-  })
-}
 
 function updateViewportMetrics() {
   if (!appViewport.value) {
@@ -456,7 +394,6 @@ onMounted(async () => {
   window.addEventListener('keydown', onDebugHotkey)
   window.addEventListener('error', onWindowError)
   window.addEventListener('unhandledrejection', onUnhandledRejection)
-  document.addEventListener('wheel', onMobileWheel, { passive: false, capture: true })
   updateViewportMetrics()
   bindViewportObserver()
   emitDebug('app', 'startup begin')
@@ -511,7 +448,6 @@ onUnmounted(() => {
   window.removeEventListener('keydown', onDebugHotkey)
   window.removeEventListener('error', onWindowError)
   window.removeEventListener('unhandledrejection', onUnhandledRejection)
-  document.removeEventListener('wheel', onMobileWheel, { capture: true })
 })
 
 onErrorCaptured((error, instance, info) => {
