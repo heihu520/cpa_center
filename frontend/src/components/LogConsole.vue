@@ -33,8 +33,9 @@ defineProps<{
 .log-console {
   height: 100%;
   min-height: 0;
-  overflow: auto;
-  padding: 1rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0.92rem;
   border-radius: 20px;
   background:
     radial-gradient(circle at top right, rgba(250, 204, 21, 0.12), transparent 35%),
@@ -43,6 +44,8 @@ defineProps<{
   font-family: "Consolas", "SFMono-Regular", monospace;
   text-align: left;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
 }
 
 .log-empty {
@@ -51,9 +54,9 @@ defineProps<{
 
 .log-row {
   display: grid;
-  grid-template-columns: minmax(130px, 170px) 70px 80px minmax(0, 1fr);
-  gap: 0.8rem;
-  padding: 0.45rem 0;
+  grid-template-columns: minmax(126px, 160px) 66px 72px minmax(0, 1fr);
+  gap: 0.7rem;
+  padding: 0.4rem 0;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
   align-items: start;
 }
@@ -63,13 +66,22 @@ defineProps<{
 }
 
 .log-console--compact {
-  padding: 0.85rem;
+  padding: 0.72rem;
   max-height: 360px;
 }
 
 .log-console--compact .log-row {
   grid-template-columns: 1fr;
-  gap: 0.2rem;
+  gap: 0.16rem;
+  padding: 0.34rem 0;
+}
+
+.log-console--compact .log-time,
+.log-console--compact .log-kind,
+.log-console--compact .log-level,
+.log-console--compact .log-message {
+  font-size: 0.8rem;
+  line-height: 1.32;
 }
 
 .log-time {
@@ -79,6 +91,11 @@ defineProps<{
 .log-kind {
   text-transform: uppercase;
   color: #facc15;
+}
+
+.log-message {
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .log-level[data-level="error"] {

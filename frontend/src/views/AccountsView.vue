@@ -25,7 +25,7 @@ const { t } = useI18n()
 const accountsStore = useAccountsStore()
 const tasksStore = useTasksStore()
 
-const pageSizeOptions = [5, 20, 50, 100, 200]
+const pageSizeOptions = [5, 10, 20, 50, 100, 200]
 const accountsTable = ref<InstanceType<typeof ElTable> | null>(null)
 const selectedRecords = ref<AccountRecord[]>([])
 const selectedRecordMap = computed(() => new Map(selectedRecords.value.map((item) => [item.name, item])))

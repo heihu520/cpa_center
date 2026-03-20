@@ -29,8 +29,11 @@ const drawerOpen = ref(false)
 const detailLoading = ref(false)
 const detailRunId = ref<number | null>(null)
 const detailPage = ref(1)
-const detailPageSize = ref(20)
-const detailPageSizes = [20, 50, 100]
+const detailPageSize = ref(5)
+const detailPageSizes = [5, 10, 20, 50, 100]
+const historyPage = ref(1)
+const historyPageSize = ref(5)
+const historyPageSizes = [5, 10, 20]
 const injectedShellMode = inject(shellModeKey, null)
 
 const scanDetailSummary = computed(() => accountsStore.scanDetail?.summary ?? null)
@@ -59,6 +62,14 @@ const historyRows = computed(() => accountsStore.history.map((item) => ({
   statusLabel: taskStatusLabel(item.status),
   finishedAtLabel: formatDateTime(item.finishedAt),
 })))
+const historyTotal = computed(() => historyRows.value.length)
+const pagedHistoryRows = computed(() => {
+  if (!isMobile.value) {
+    return historyRows.value
+  }
+  const start = (historyPage.value - 1) * historyPageSize.value
+  return historyRows.value.slice(start, start + historyPageSize.value)
+})
 
 onMounted(() => {
   emitDebug('dashboard', 'mounted', {
@@ -89,6 +100,31 @@ watch(
   },
   { immediate: true },
 )
+
+watch(historyTotal, (total) => {
+  const maxPage = Math.max(1, Math.ceil(total / historyPageSize.value))
+  if (historyPage.value > maxPage) {
+    historyPage.value = maxPage
+  }
+})
+
+watch(isMobile, (mobile) => {
+  if (!mobile) {
+    historyPage.value = 1
+    return
+  }
+  historyPageSize.value = 5
+  historyPage.value = 1
+}, { immediate: true })
+
+function changeHistoryPage(page: number) {
+  historyPage.value = page
+}
+
+function changeHistoryPageSize(pageSize: number) {
+  historyPageSize.value = pageSize
+  historyPage.value = 1
+}
 
 async function runScan() {
   try {
@@ -243,7 +279,7 @@ function changeDetailPageSize(pageSize: number) {
         </div>
         <div class="panel__body panel__body--table">
           <div v-if="isMobile" class="mobile-history-list">
-            <article v-for="row in historyRows" :key="row.runId" class="mobile-history-card">
+            <article v-for="row in pagedHistoryRows" :key="row.runId" class="mobile-history-card">
               <div class="mobile-history-card__head">
                 <strong>#{{ row.runId }}</strong>
                 <StatusPill :state="row.status === 'success' ? 'normal' : row.status === 'failed' ? 'error' : 'pending'" :label="row.statusLabel" />
@@ -257,6 +293,18 @@ function changeDetailPageSize(pageSize: number) {
               <span class="muted mobile-history-card__time">{{ row.finishedAtLabel }}</span>
               <el-button text @click="openHistory(row.runId)">{{ t('dashboard.inspect') }}</el-button>
             </article>
+            <div class="scan-detail-table-footer scan-detail-table-footer--mobile-history">
+              <el-pagination
+                background
+                :page-sizes="historyPageSizes"
+                :current-page="historyPage"
+                :page-size="historyPageSize"
+                :total="historyTotal"
+                layout="prev, pager, next, sizes"
+                @current-change="changeHistoryPage"
+                @size-change="changeHistoryPageSize"
+              />
+            </div>
           </div>
           <div v-else class="table-wrap">
             <el-table class="dashboard-history-table" :data="historyRows" height="100%">

@@ -141,7 +141,16 @@ function resetQuotaViewScroll() {
 async function refreshShell() {
   await nextTick()
   await new Promise<void>((resolve) => {
-    window.requestAnimationFrame(() => resolve())
+    let settled = false
+    const finish = () => {
+      if (settled) {
+        return
+      }
+      settled = true
+      resolve()
+    }
+    window.setTimeout(finish, 32)
+    window.requestAnimationFrame(() => finish())
   })
   shellRevision.value += 1
   viewRevision.value += 1
@@ -160,6 +169,75 @@ function activateView(view: ViewKey) {
   if (shellMode.value === 'mobile') {
     closeMobileNav()
   }
+}
+
+function shouldBypassWheelFallback(target: EventTarget | null) {
+  if (!(target instanceof Element)) {
+    return false
+  }
+
+  const interactiveSelector = [
+    '[contenteditable="true"]',
+    '.el-select-dropdown',
+    '.el-popper',
+    '.el-dialog',
+    '.el-drawer',
+    '.el-table__body-wrapper',
+    '.table-wrap',
+  ].join(', ')
+
+  if (target.closest(interactiveSelector)) {
+    return true
+  }
+
+  const rootScrollableSelectors = [
+    'html',
+    'body',
+    '#app',
+    '.app-viewport',
+    '.app-shell',
+    '.app-main',
+    '.view-shell',
+  ]
+
+  for (let element: Element | null = target; element; element = element.parentElement) {
+    if (rootScrollableSelectors.some((selector) => element.matches(selector))) {
+      continue
+    }
+    const style = window.getComputedStyle(element)
+    const overflowY = style.overflowY
+    if ((overflowY === 'auto' || overflowY === 'scroll') && element.scrollHeight > element.clientHeight + 1) {
+      return true
+    }
+  }
+
+  return false
+}
+
+function onMobileWheel(event: WheelEvent) {
+  if ((event as WheelEvent & { __cpaHandled?: boolean }).__cpaHandled) {
+    return
+  }
+  if (shellMode.value !== 'mobile') {
+    return
+  }
+  if (!event.cancelable) {
+    return
+  }
+  if (Math.abs(event.deltaY) <= Math.abs(event.deltaX) || event.deltaY === 0) {
+    return
+  }
+  if (shouldBypassWheelFallback(event.target)) {
+    return
+  }
+
+  ;(event as WheelEvent & { __cpaHandled?: boolean }).__cpaHandled = true
+  event.preventDefault()
+  window.scrollBy({
+    top: event.deltaY,
+    left: 0,
+    behavior: 'auto',
+  })
 }
 
 function updateViewportMetrics() {
@@ -380,6 +458,7 @@ onMounted(async () => {
   window.addEventListener('keydown', onDebugHotkey)
   window.addEventListener('error', onWindowError)
   window.addEventListener('unhandledrejection', onUnhandledRejection)
+  document.addEventListener('wheel', onMobileWheel, { passive: false, capture: true })
   updateViewportMetrics()
   bindViewportObserver()
   emitDebug('app', 'startup begin')
@@ -434,6 +513,7 @@ onUnmounted(() => {
   window.removeEventListener('keydown', onDebugHotkey)
   window.removeEventListener('error', onWindowError)
   window.removeEventListener('unhandledrejection', onUnhandledRejection)
+  document.removeEventListener('wheel', onMobileWheel, { capture: true })
 })
 
 onErrorCaptured((error, instance, info) => {
@@ -509,7 +589,7 @@ watch(debugVisible, (visible) => {
       class="app-viewport"
     >
       <div :key="shellRevision" class="app-shell" :class="shellClasses">
-        <aside class="app-sidebar">
+        <aside class="app-sidebar" :class="{ 'app-sidebar--mobile-open': shellMode === 'mobile' && mobileNavOpen }">
           <div>
             <p class="sidebar-kicker">{{ t('app.name') }}</p>
             <h1>{{ t('app.headline') }}</h1>
@@ -533,6 +613,12 @@ watch(debugVisible, (visible) => {
         </aside>
 
         <main class="app-main">
+          <div v-if="shellMode === 'mobile'" class="mobile-menu-fab-wrap">
+            <button class="mobile-side-toggle" type="button" :aria-label="mobileNavOpen ? '收起菜单' : '展开菜单'" @click="mobileNavOpen = !mobileNavOpen">
+              {{ mobileNavOpen ? '‹' : '›' }}
+            </button>
+          </div>
+
           <header class="topbar">
             <div class="topbar-main">
               <div class="topbar-status">
@@ -542,9 +628,6 @@ watch(debugVisible, (visible) => {
                   <p>{{ settingsStore.settings.baseUrl || t('topbar.endpointHint') }}</p>
                 </div>
               </div>
-              <el-button v-if="shellMode === 'mobile'" class="topbar-menu" plain @click="mobileNavOpen = !mobileNavOpen">
-                {{ mobileNavOpen ? '关闭' : '菜单' }}
-              </el-button>
             </div>
             <div class="topbar-meta">
               <span>{{ t('topbar.tracked', { count: accountsStore.summary.filteredAccounts }) }}</span>
@@ -574,25 +657,6 @@ watch(debugVisible, (visible) => {
               </el-select>
             </div>
           </header>
-
-          <section v-if="shellMode === 'mobile' && mobileNavOpen" class="mobile-nav-panel panel">
-            <div class="mobile-nav-header">
-              <p class="sidebar-kicker">{{ t('app.name') }}</p>
-              <h3>{{ t('app.headline') }}</h3>
-            </div>
-            <nav class="nav-list nav-list--mobile">
-              <button
-                v-for="item in navItems"
-                :key="`mobile-${item.key}`"
-                class="nav-item"
-                :class="{ 'nav-item--active': item.key === activeView }"
-                @click="activateView(item.key)"
-              >
-                <strong>{{ item.label }}</strong>
-                <span>{{ item.caption }}</span>
-              </button>
-            </nav>
-          </section>
 
           <section v-if="!appReady" class="view-shell view-shell--settings">
             <article class="panel panel--fill">
