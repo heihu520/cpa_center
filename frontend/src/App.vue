@@ -414,11 +414,9 @@ async function changeActiveConnection(connectionId: string) {
   try {
     await settingsStore.switchConnection(connectionId)
     EmitScopedContextChange()
-    tasksStore.clearTransientState()
     quotasStore.snapshot = null
     quotasStore.error = ''
     quotasStore.hasRequested = false
-    tasksStore.logs = []
     await accountsStore.refreshAll()
     syncQuotaAutoRefresh()
     await refreshShell()

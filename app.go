@@ -229,6 +229,14 @@ func (a *App) ExportAccounts(kind string, format string, path string) (backend.E
 	return service.ExportAccounts(kind, format, path)
 }
 
+func (a *App) DeleteScanRun(runID int64) error {
+	service, err := a.ensureBackend()
+	if err != nil {
+		return err
+	}
+	return service.DeleteScanRun(runID)
+}
+
 func (a *App) ListScanHistory(limit int) ([]backend.ScanSummary, error) {
 	service, err := a.ensureBackend()
 	if err != nil {

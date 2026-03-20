@@ -89,6 +89,7 @@ export const api = {
     pageSize,
   })),
   syncInventory: () => request<InventorySyncResult>('/api/inventory/sync', { method: 'POST', body: '{}' }),
+  deleteScanRun: (runId: number) => request<boolean>('/api/scan/delete', { method: 'POST', body: JSON.stringify({ runId }) }),
   getScanDetailsPage: (runId: number, page: number, pageSize: number) => request<ScanDetailPage>(withQuery('/api/scan/details', { runId, page, pageSize })),
   probeAccount: (name: string) => request<AccountRecord>('/api/accounts/probe-one', { method: 'POST', body: JSON.stringify({ name }) }),
   probeAccounts: (names: string[]) => request<BulkAccountActionResult>('/api/accounts/probe-many', { method: 'POST', body: JSON.stringify({ names }) }),

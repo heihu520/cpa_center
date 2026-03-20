@@ -14,11 +14,12 @@ type EventEmitter interface {
 }
 
 type Backend struct {
-	store     *Store
-	client    *Client
-	logger    *Logger
-	emitter   EventEmitter
-	scheduler *schedulerRuntime
+	store        *Store
+	client       *Client
+	logger       *Logger
+	emitter      EventEmitter
+	scheduler    *schedulerRuntime
+	connectionID string
 
 	mu         sync.Mutex
 	activeKind string
@@ -400,10 +401,11 @@ func (b *Backend) emitDetailedLog(enabled bool, kind string, level string, messa
 
 func (b *Backend) emitLogInternal(kind string, level string, message string) {
 	entry := LogEntry{
-		Kind:      kind,
-		Level:     level,
-		Message:   message,
-		Timestamp: nowISO(),
+		ConnectionID: b.connectionID,
+		Kind:         kind,
+		Level:        level,
+		Message:      message,
+		Timestamp:    nowISO(),
 	}
 	if b.logger != nil {
 		_ = b.logger.Write(entry)

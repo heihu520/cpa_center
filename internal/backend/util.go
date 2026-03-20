@@ -221,8 +221,30 @@ func logFilePath(dataDir string) string {
 	return filepath.Join(dataDir, "app.log")
 }
 
-func defaultExportPath(exportDir string, kind string, format string) string {
-	fileName := fmt.Sprintf("export-%s-%d.%s", kind, time.Now().Unix(), format)
+func defaultExportPath(exportDir string, format string, settings AppSettings) string {
+	businessName := strings.TrimSpace(settings.Provider)
+	if businessName == "" {
+		businessName = strings.TrimSpace(settings.TargetType)
+	}
+	if businessName == "" {
+		businessName = "business"
+	}
+	businessName = strings.Map(func(r rune) rune {
+		switch r {
+		case '<', '>', ':', '"', '/', '\\', '|', '?', '*':
+			return '-'
+		default:
+			if r < 32 {
+				return '-'
+			}
+			return r
+		}
+	}, businessName)
+	businessName = strings.Trim(strings.Join(strings.Fields(businessName), "-"), "-.")
+	if businessName == "" {
+		businessName = "business"
+	}
+	fileName := fmt.Sprintf("%s-%d.%s", businessName, time.Now().UnixMilli(), format)
 	return filepath.Join(exportDir, fileName)
 }
 

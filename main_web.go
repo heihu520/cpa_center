@@ -125,6 +125,7 @@ func (s *appServer) routes() http.Handler {
 	mux.HandleFunc("/api/scan/run", s.handleRunScan)
 	mux.HandleFunc("/api/scan/cancel", s.handleCancelScan)
 	mux.HandleFunc("/api/maintain/run", s.handleRunMaintain)
+	mux.HandleFunc("/api/scan/delete", s.handleDeleteScanRun)
 	mux.HandleFunc("/api/scan/details", s.handleScanDetails)
 	mux.HandleFunc("/api/events", s.handleEvents)
 	mux.Handle("/", s.frontendHandler())
@@ -632,6 +633,29 @@ func (s *appServer) handleRunMaintain(w http.ResponseWriter, r *http.Request) {
 	}
 	result, err := backendService.RunMaintain(input)
 	writeJSONResult(w, result, err)
+}
+
+func (s *appServer) handleDeleteScanRun(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		methodNotAllowed(w)
+		return
+	}
+	var input struct {
+		RunID int64 `json:"runId"`
+	}
+	if !decodeJSONBody(w, r, &input) {
+		return
+	}
+	if input.RunID <= 0 {
+		writeError(w, http.StatusBadRequest, errors.New("invalid runId"))
+		return
+	}
+	backendService, err := s.activeBackend()
+	if err != nil {
+		writeError(w, http.StatusBadRequest, err)
+		return
+	}
+	writeJSONResult(w, true, backendService.DeleteScanRun(input.RunID))
 }
 
 func (s *appServer) handleScanDetails(w http.ResponseWriter, r *http.Request) {

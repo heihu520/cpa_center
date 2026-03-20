@@ -706,6 +706,31 @@ func (s *Store) TrimScanHistory(limit int) error {
 	return tx.Commit()
 }
 
+func (s *Store) DeleteScanRun(runID int64) error {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	if _, err := tx.Exec(`DELETE FROM scan_records WHERE run_id = ?`, runID); err != nil {
+		return err
+	}
+	result, err := tx.Exec(`DELETE FROM scan_runs WHERE run_id = ?`, runID)
+	if err != nil {
+		return err
+	}
+	deleted, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if deleted == 0 {
+		return sql.ErrNoRows
+	}
+
+	return tx.Commit()
+}
+
 func (s *Store) ListScanHistory(limit int) ([]ScanSummary, error) {
 	if limit <= 0 {
 		limit = 20

@@ -207,6 +207,31 @@ function changeDetailPageSize(pageSize: number) {
   detailPage.value = 1
   void loadScanDetailPage(1, pageSize)
 }
+
+async function deleteHistory(runId: number) {
+  try {
+    await ElMessageBox.confirm(
+      `#${runId}`,
+      t('common.delete'),
+      {
+        confirmButtonText: t('common.delete'),
+        cancelButtonText: t('accounts.dialogs.cancel'),
+        customClass: 'cpa-message-box',
+        type: 'warning',
+      },
+    )
+    await accountsStore.deleteScanRun(runId)
+    if (detailRunId.value === runId) {
+      drawerOpen.value = false
+      detailRunId.value = null
+    }
+    ElMessage.success(t('common.delete'))
+  } catch (error) {
+    if (String(error) !== 'cancel') {
+      ElMessage.error(toErrorMessage(error))
+    }
+  }
+}
 </script>
 
 <template>
@@ -291,7 +316,10 @@ function changeDetailPageSize(pageSize: number) {
                 <span>{{ t('dashboard.historyColumns.recovered') }}：{{ row.recoveredCount }}</span>
               </div>
               <span class="muted mobile-history-card__time">{{ row.finishedAtLabel }}</span>
-              <el-button text @click="openHistory(row.runId)">{{ t('dashboard.inspect') }}</el-button>
+              <div class="dashboard-history-actions dashboard-history-actions--mobile">
+                <el-button class="dashboard-history-actions__button" @click="openHistory(row.runId)">{{ t('dashboard.inspect') }}</el-button>
+                <el-button class="dashboard-history-actions__button" type="danger" plain @click="deleteHistory(row.runId)">{{ t('common.delete') }}</el-button>
+              </div>
             </article>
             <div class="scan-detail-table-footer scan-detail-table-footer--mobile-history">
               <el-pagination
@@ -315,11 +343,16 @@ function changeDetailPageSize(pageSize: number) {
               <el-table-column prop="quotaLimitedCount" :label="t('dashboard.historyColumns.quota')" width="84" />
               <el-table-column prop="recoveredCount" :label="t('dashboard.historyColumns.recovered')" width="104" />
               <el-table-column prop="finishedAtLabel" :label="t('dashboard.historyColumns.finished')" min-width="180" />
-              <el-table-column label="" width="120">
+              <el-table-column label="" width="176" align="right">
                 <template #default="{ row }">
-                  <el-button text @click="openHistory(row.runId)">
-                    {{ t('dashboard.inspect') }}
-                  </el-button>
+                  <div class="dashboard-history-actions">
+                    <el-button class="dashboard-history-actions__button" @click="openHistory(row.runId)">
+                      {{ t('dashboard.inspect') }}
+                    </el-button>
+                    <el-button class="dashboard-history-actions__button" type="danger" plain @click="deleteHistory(row.runId)">
+                      {{ t('common.delete') }}
+                    </el-button>
+                  </div>
                 </template>
               </el-table-column>
             </el-table>

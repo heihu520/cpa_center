@@ -199,6 +199,18 @@ export const useAccountsStore = defineStore('accountsStore', {
         throw new Error(toErrorMessage(error))
       }
     },
+    async deleteScanRun(runId: number) {
+      try {
+        await api.deleteScanRun(runId)
+        if (this.scanDetail?.summary.runId === runId) {
+          this.scanDetail = null
+        }
+        await this.refreshDashboard()
+        return true
+      } catch (error) {
+        throw new Error(toErrorMessage(error))
+      }
+    },
     async exportRecords(kind: 'invalid401' | 'quotaLimited', format: 'json' | 'csv') {
       try {
         api.downloadExport(kind, format)

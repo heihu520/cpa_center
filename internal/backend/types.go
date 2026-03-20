@@ -271,25 +271,28 @@ type ScanDetailPage struct {
 }
 
 type TaskProgress struct {
-	Kind    string `json:"kind"`
-	Phase   string `json:"phase"`
-	Current int    `json:"current"`
-	Total   int    `json:"total"`
-	Message string `json:"message"`
-	Done    bool   `json:"done"`
+	ConnectionID string `json:"connectionId,omitempty"`
+	Kind         string `json:"kind"`
+	Phase        string `json:"phase"`
+	Current      int    `json:"current"`
+	Total        int    `json:"total"`
+	Message      string `json:"message"`
+	Done         bool   `json:"done"`
 }
 
 type TaskFinished struct {
-	Kind    string `json:"kind"`
-	Status  string `json:"status"`
-	Message string `json:"message"`
+	ConnectionID string `json:"connectionId,omitempty"`
+	Kind         string `json:"kind"`
+	Status       string `json:"status"`
+	Message      string `json:"message"`
 }
 
 type LogEntry struct {
-	Kind      string `json:"kind"`
-	Level     string `json:"level"`
-	Message   string `json:"message"`
-	Timestamp string `json:"timestamp"`
+	ConnectionID string `json:"connectionId,omitempty"`
+	Kind         string `json:"kind"`
+	Level        string `json:"level"`
+	Message      string `json:"message"`
+	Timestamp    string `json:"timestamp"`
 }
 
 type AccountUpdate struct {

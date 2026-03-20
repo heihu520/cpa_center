@@ -398,7 +398,7 @@ func (b *Backend) ExportAccounts(kind string, format string, path string) (Expor
 
 	selected := filterAccountsForExport(records, kind)
 	if path == "" {
-		path = defaultExportPath(settings.ExportDirectory, kind, format)
+		path = defaultExportPath(settings.ExportDirectory, format, settings)
 	}
 	if err := ensureDir(filepathDir(path)); err != nil {
 		return ExportResult{}, err
@@ -428,6 +428,10 @@ func (b *Backend) ExportAccounts(kind string, format string, path string) (Expor
 		Path:     path,
 		Exported: len(selected),
 	}, nil
+}
+
+func (b *Backend) DeleteScanRun(runID int64) error {
+	return b.store.DeleteScanRun(runID)
 }
 
 func (b *Backend) ListScanHistory(limit int) ([]ScanSummary, error) {

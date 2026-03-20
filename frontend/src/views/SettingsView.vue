@@ -27,9 +27,9 @@ const accountsStore = useAccountsStore()
 const createConnectionDialogOpen = ref(false)
 const createConnectionName = ref('')
 const createConnectionSettings = reactive<AppSettings>(createDefaultSettings())
+const createConnectionResult = ref<{ message: string; accountCount: number; checkedAt: string } | null>(null)
 const timezoneLabel = Intl.DateTimeFormat().resolvedOptions().timeZone || t('settings.scheduleTimezoneLocal')
 const isChinese = computed(() => settingsStore.currentLocale === 'zh-CN')
-const skipKnown401Label = computed(() => (isChinese.value ? '扫描时跳过已知 401' : 'Skip known 401 during scan'))
 
 const infoAriaLabel = computed(() => (isChinese.value ? '更多信息' : 'More information'))
 
@@ -124,24 +124,6 @@ async function testOnly() {
   }
 }
 
-async function testAndSave() {
-  try {
-    const result = await settingsStore.testAndSave()
-    await accountsStore.refreshAll()
-    if (!result) {
-      ElMessage.success(t('settings.savedReachableSyncingBasic'))
-      return
-    }
-    ElMessage.success(
-      result.accountCount > 0
-        ? t('settings.savedReachableSyncing', { count: result.accountCount })
-        : t('settings.savedReachableSyncingBasic'),
-    )
-  } catch (error) {
-    ElMessage.error(toErrorMessage(error))
-  }
-}
-
 async function changeLocale(locale: string) {
   try {
     await settingsStore.saveLocalePreference(locale)
@@ -160,6 +142,7 @@ async function changeLayoutMode(layoutMode: string) {
 
 function openCreateConnectionDialog() {
   createConnectionName.value = ''
+  createConnectionResult.value = null
   Object.assign(createConnectionSettings, JSON.parse(JSON.stringify(settingsStore.settings)))
   createConnectionDialogOpen.value = true
 }
@@ -174,12 +157,27 @@ async function switchConnection(connectionId: string) {
   }
 }
 
+async function testCreateConnection() {
+  try {
+    const result = await settingsStore.testConnectionWithSettings(createConnectionSettings as typeof settingsStore.settings)
+    createConnectionResult.value = result
+    ElMessage.success(
+      result.accountCount > 0
+        ? t('settings.testReachable', { message: result.message, count: result.accountCount })
+        : t('settings.testReachableBasic', { message: result.message }),
+    )
+  } catch (error) {
+    ElMessage.error(toErrorMessage(error))
+  }
+}
+
 async function createConnection() {
   try {
     const result = await settingsStore.createConnection(createConnectionName.value, createConnectionSettings as typeof settingsStore.settings)
     await settingsStore.loadConnections()
     await accountsStore.refreshAll()
     createConnectionDialogOpen.value = false
+    createConnectionResult.value = null
     ElMessage.success(
       result.connectionResult.accountCount > 0
         ? t('settings.savedReachableSyncing', { count: result.connectionResult.accountCount })
@@ -628,9 +626,6 @@ async function deleteConnection(connectionId: string) {
 
         <div class="hero-actions">
           <el-button plain @click="testOnly">{{ t('settings.testConnection') }}</el-button>
-          <el-button type="primary" :loading="settingsStore.saving" @click="testAndSave">
-            {{ t('settings.testAndSave') }}
-          </el-button>
         </div>
       </el-form>
     </section>
@@ -651,9 +646,24 @@ async function deleteConnection(connectionId: string) {
             <el-input v-model="createConnectionSettings.managementToken" type="password" :show-password="false" :placeholder="t('settings.tokenPlaceholder')" />
           </el-form-item>
         </div>
+        <div v-if="createConnectionResult" class="muted">
+          {{
+            createConnectionResult.accountCount > 0
+              ? t('settings.connectionSummary', {
+                  message: createConnectionResult.message,
+                  count: createConnectionResult.accountCount,
+                  checkedAt: formatDateTime(createConnectionResult.checkedAt),
+                })
+              : t('settings.connectionSummaryBasic', {
+                  message: createConnectionResult.message,
+                  checkedAt: formatDateTime(createConnectionResult.checkedAt),
+                })
+          }}
+        </div>
         <div class="hero-actions">
           <el-button plain @click="createConnectionDialogOpen = false">{{ t('accounts.dialogs.cancel') }}</el-button>
-          <el-button type="primary" @click="createConnection">{{ t('settings.addConnection') }}</el-button>
+          <el-button plain @click="testCreateConnection">{{ t('settings.testConnection') }}</el-button>
+          <el-button type="primary" @click="createConnection">{{ t('settings.testAndSave') }}</el-button>
         </div>
       </div>
     </el-dialog>

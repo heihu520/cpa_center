@@ -6,6 +6,7 @@ import type { AppSettings, ConnectionResult, ConnectionsResponse, ConnectionSumm
 import { createDefaultScheduleSettings, createDefaultSettings, validateSettings } from '@/utils/settings'
 import { toErrorMessage } from '@/utils/errors'
 import { detectPreferredLocale, normalizeLocaleCode } from '@/utils/locale'
+import { useTasksStore } from '@/stores/tasks'
 
 interface SettingsState {
   settings: AppSettings
@@ -105,8 +106,14 @@ export const useSettingsStore = defineStore('settingsStore', {
     async switchConnection(connectionId: string) {
       const result = await api.setActiveConnection(connectionId)
       this.applyConnections(result)
+      useTasksStore().switchActiveConnection(connectionId)
       await this.loadSettings()
+      await this.verifyActiveConnection()
       return this.activeConnectionId
+    },
+    async verifyActiveConnection() {
+      this.connection = await api.testConnection(this.settings)
+      return this.connection
     },
     async createConnection(name: string, settings: AppSettings): Promise<CreateConnectionResponse> {
       const result = await api.createConnection(name, settings)
@@ -152,6 +159,9 @@ export const useSettingsStore = defineStore('settingsStore', {
         await this.loadConnections()
         const result = await api.getSettings()
         this.mergeSettings(result as unknown as Partial<AppSettings>)
+        if (this.activeConnectionId) {
+          useTasksStore().switchActiveConnection(this.activeConnectionId)
+        }
         await this.loadSchedulerStatus()
       } finally {
         this.loading = false
@@ -176,6 +186,13 @@ export const useSettingsStore = defineStore('settingsStore', {
         this.settings.layoutMode = previous
         throw new Error(toErrorMessage(error))
       }
+    },
+    async testConnectionWithSettings(input: AppSettings) {
+      const errors = validateSettings(input, i18n.global.t)
+      if (Object.keys(errors).length > 0) {
+        throw new Error(i18n.global.t('validation.fixBeforeTesting'))
+      }
+      return await api.testConnection(input)
     },
     async testConnection() {
       this.errors = validateSettings(this.settings, i18n.global.t)
