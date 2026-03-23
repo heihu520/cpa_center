@@ -4964,22 +4964,14 @@ select {
   }
 
   .app-shell--mobile .app-main,
-  .app-shell--mobile .app-main *,
   .app-shell--mobile .topbar,
-  .app-shell--mobile .topbar *,
   .app-shell--mobile .view-shell,
-  .app-shell--mobile .view-shell *,
   .app-shell--mobile .hero-panel,
-  .app-shell--mobile .hero-panel *,
   .app-shell--mobile .stats-grid,
-  .app-shell--mobile .stats-grid *,
   .app-shell--mobile .stat-card,
-  .app-shell--mobile .stat-card *,
   .app-shell--mobile .dashboard-grid,
-  .app-shell--mobile .dashboard-grid *,
-  .app-shell--mobile .panel,
-  .app-shell--mobile .panel * {
-    touch-action: pan-y pinch-zoom;
+  .app-shell--mobile .panel {
+    touch-action: auto;
   }
 
   .app-shell--mobile .view-shell {

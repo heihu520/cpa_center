@@ -124,6 +124,15 @@ async function testOnly() {
   }
 }
 
+async function saveSettingsOnly() {
+  try {
+    await settingsStore.saveSettings()
+    ElMessage.success(t('settings.saved'))
+  } catch (error) {
+    ElMessage.error(toErrorMessage(error))
+  }
+}
+
 async function changeLocale(locale: string) {
   try {
     await settingsStore.saveLocalePreference(locale)
@@ -626,6 +635,7 @@ async function deleteConnection(connectionId: string) {
 
         <div class="hero-actions">
           <el-button plain @click="testOnly">{{ t('settings.testConnection') }}</el-button>
+          <el-button type="primary" :loading="settingsStore.saving" @click="saveSettingsOnly">{{ t('settings.save') }}</el-button>
         </div>
       </el-form>
     </section>
